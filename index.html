@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Álbum Tracker — Copa 2026</title>
+<meta name="theme-color" content="#0E3A3A" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Álbum 2026" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" href="icon-192.png" />
+<style>
+  :root{
+    --petrol:#0E3A3A; --petrol-2:#0B2E2E; --surface:#12433F; --surface-2:#16524D;
+    --paper:#F2ECD9; --paper-2:#E7DFC6; --ink:#172625;
+    --gold:#E8B23A; --gold-2:#C9912A; --coral:#FF6B4A; --mint:#3FD0C9;
+    --text:#EAF3F1; --muted:#90AEAB; --line:rgba(255,255,255,.10);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--petrol); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    overscroll-behavior-y:none;}
+  body{padding-bottom:calc(72px + var(--safe-b));}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
+  .num{font-variant-numeric:tabular-nums; letter-spacing:.02em;}
+
+  /* App bar */
+  .appbar{position:sticky; top:0; z-index:20; padding:calc(12px + var(--safe-t)) 16px 12px;
+    background:linear-gradient(180deg,var(--petrol) 70%, rgba(14,58,58,.92)); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);}
+  .appbar-row{display:flex; align-items:center; gap:10px;}
+  .brand{display:flex; align-items:center; gap:10px; min-width:0;}
+  .brand-mark{width:30px;height:30px;border-radius:8px;background:var(--paper);
+    display:grid;place-items:center;flex:none;}
+  .brand-mark::after{content:"★"; color:var(--gold-2); font-size:17px; line-height:1;}
+  .brand-title{font-weight:800; font-size:16px; letter-spacing:.01em; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;}
+  .brand-sub{font-size:11px; color:var(--muted); margin-top:1px;}
+  .back-btn{font-weight:700; font-size:15px; color:var(--mint); padding:6px 8px; margin-left:-8px;}
+
+  /* overall progress */
+  .prog-wrap{margin-top:12px;}
+  .prog-top{display:flex; justify-content:space-between; align-items:baseline; font-size:12.5px; color:var(--muted);}
+  .prog-top b{color:var(--text); font-size:14px; font-weight:800;}
+  .prog-bar{height:9px; border-radius:99px; background:var(--petrol-2); margin-top:6px; overflow:hidden;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.4);}
+  .prog-fill{height:100%; border-radius:99px; background:linear-gradient(90deg,var(--gold-2),var(--gold)); width:0;
+    transition:width .5s cubic-bezier(.2,.8,.2,1);}
+
+  /* layout */
+  .view{padding:16px; max-width:760px; margin:0 auto;}
+  .section-eyebrow{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--mint);
+    font-weight:800; margin:4px 0 12px;}
+  .stat-row{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px;}
+  .stat{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px;}
+  .stat .n{font-size:22px; font-weight:800;}
+  .stat .l{font-size:11px; color:var(--muted); margin-top:2px;}
+  .stat.gold .n{color:var(--gold);}
+  .stat.coral .n{color:var(--coral);}
+  .stat.mint .n{color:var(--mint);}
+
+  /* team cards */
+  .teams-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+  .team-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px;
+    text-align:left; display:flex; flex-direction:column; gap:10px; position:relative; overflow:hidden;}
+  .team-card:active{transform:scale(.985);}
+  .team-card.done{border-color:var(--gold);}
+  .team-card.done::before{content:"completa"; position:absolute; top:10px; right:-26px; transform:rotate(38deg);
+    background:var(--gold); color:var(--ink); font-size:9px; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase; padding:3px 28px;}
+  .tc-head{display:flex; align-items:center; gap:9px;}
+  .tc-sigla{font-size:15px; font-weight:800; background:var(--petrol-2); color:var(--gold);
+    border-radius:8px; padding:5px 8px; letter-spacing:.04em;}
+  .tc-name{font-size:13.5px; font-weight:700; line-height:1.15; min-width:0;}
+  .tc-meta{font-size:11.5px; color:var(--muted);}
+  .tc-bar{height:6px; border-radius:99px; background:var(--petrol-2); overflow:hidden;}
+  .tc-bar > i{display:block; height:100%; background:var(--mint); border-radius:99px;}
+  .team-card.done .tc-bar > i{background:var(--gold);}
+
+  .add-card{border:1.5px dashed var(--line); background:transparent; color:var(--mint);
+    display:grid; place-items:center; min-height:96px; font-weight:700; font-size:14px; border-radius:16px;}
+
+  /* slots grid */
+  .team-hero{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px;
+    margin-bottom:16px; display:flex; align-items:center; gap:12px;}
+  .team-hero .tc-sigla{font-size:20px; padding:8px 11px;}
+  .team-hero .h-name{font-weight:800; font-size:17px;}
+  .team-hero .h-meta{font-size:12.5px; color:var(--muted); margin-top:2px;}
+  .scan-cta{margin-left:auto; background:var(--coral); color:#fff; font-weight:800; font-size:13px;
+    padding:10px 13px; border-radius:12px; white-space:nowrap;}
+
+  .slots{display:grid; grid-template-columns:repeat(auto-fill,minmax(82px,1fr)); gap:10px;}
+  .slot{background:var(--paper); border-radius:13px; padding:10px 8px 8px; text-align:center;
+    border:2px dashed var(--paper-2); position:relative; min-height:92px; display:flex; flex-direction:column;
+    transition:transform .12s ease, box-shadow .2s ease;}
+  .slot-tap{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    color:#9a9079;}
+  .slot-sigla{font-size:11px; font-weight:800; letter-spacing:.06em;}
+  .slot-num{font-size:26px; font-weight:800; line-height:1;}
+  .slot-foot{height:22px; display:flex; align-items:center; justify-content:center;}
+  .slot-falta{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#b3a988; font-weight:800;}
+  .slot.is-have{border-style:solid; border-color:var(--gold); background:#fff;
+    box-shadow:0 4px 14px rgba(232,178,58,.28);}
+  .slot.is-have .slot-tap{color:var(--ink);}
+  .slot.is-have .slot-sigla{color:var(--gold-2);}
+  .slot.is-have::after{content:"✓"; position:absolute; top:5px; right:7px; color:var(--gold-2);
+    font-weight:900; font-size:13px;}
+  .slot:active{transform:scale(.96);}
+  .rep{display:inline-flex; align-items:center; gap:4px;}
+  .rep button{width:22px;height:22px;border-radius:7px;background:var(--paper-2); color:var(--ink);
+    font-weight:800; font-size:15px; line-height:1; display:grid; place-items:center;}
+  .rep .rn{font-size:11px; font-weight:800; color:var(--ink); min-width:26px;}
+  .rep .rn.zero{color:#b3a988; font-weight:700;}
+
+  /* scan */
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px;}
+  .panel h3{margin:0 0 6px; font-size:15px;}
+  .panel p{margin:0 0 12px; font-size:13px; color:var(--muted); line-height:1.5;}
+  .field-label{font-size:12px; color:var(--muted); font-weight:700; display:block; margin-bottom:6px;}
+  select,input[type=text],input[type=password]{width:100%; background:var(--petrol-2); color:var(--text);
+    border:1px solid var(--line); border-radius:11px; padding:12px; font-size:15px; font-family:inherit;}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    padding:14px; border-radius:13px; font-weight:800; font-size:15px;}
+  .btn-gold{background:linear-gradient(180deg,var(--gold),var(--gold-2)); color:var(--ink);}
+  .btn-mint{background:var(--mint); color:var(--ink);}
+  .btn-ghost{background:var(--petrol-2); color:var(--text); border:1px solid var(--line);}
+  .btn[disabled]{opacity:.5;}
+  .preview{width:100%; border-radius:12px; margin:12px 0; display:none; border:1px solid var(--line);}
+  .scan-status{font-size:13px; color:var(--muted); margin-top:10px; min-height:18px; line-height:1.5;}
+  .scan-status.err{color:var(--coral);}
+  .scan-status.ok{color:var(--mint);}
+  .review{margin-top:12px; padding:12px; background:var(--petrol-2); border-radius:12px; display:none;}
+  .review .chips{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 12px;}
+  .chip{font-size:12px; font-weight:800; padding:5px 9px; border-radius:8px; background:var(--surface-2);}
+  .chip.have{color:var(--gold);}
+  .row-2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  /* trades */
+  .trade-block{margin-bottom:20px;}
+  .trade-list{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:6px 14px;}
+  .trade-item{display:flex; justify-content:space-between; align-items:center; padding:11px 0;
+    border-bottom:1px solid var(--line); font-size:14px;}
+  .trade-item:last-child{border-bottom:none;}
+  .trade-item .codes{color:var(--muted); font-size:12.5px;}
+  .pill{font-size:11px; font-weight:800; padding:4px 9px; border-radius:99px;}
+  .pill.gold{background:rgba(232,178,58,.18); color:var(--gold);}
+  .pill.coral{background:rgba(255,107,74,.18); color:var(--coral);}
+
+  .empty{ text-align:center; color:var(--muted); padding:40px 20px; font-size:14px; line-height:1.6;}
+  .note{font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:10px;}
+
+  /* bottom nav */
+  .tabbar{position:fixed; bottom:0; left:0; right:0; z-index:30;
+    display:grid; grid-template-columns:repeat(4,1fr);
+    background:rgba(11,46,46,.96); backdrop-filter:blur(10px); border-top:1px solid var(--line);
+    padding-bottom:var(--safe-b);}
+  .tab{padding:9px 4px 8px; display:flex; flex-direction:column; align-items:center; gap:3px;
+    color:var(--muted); font-size:10.5px; font-weight:700;}
+  .tab svg{width:23px; height:23px;}
+  .tab.active{color:var(--gold);}
+
+  /* modal */
+  .modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:50; display:none;
+    align-items:flex-end; justify-content:center;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--surface); width:100%; max-width:520px; border-radius:20px 20px 0 0;
+    padding:20px 18px calc(20px + var(--safe-b)); max-height:84vh; overflow:auto;}
+  .modal h3{margin:0 0 14px; font-size:17px;}
+  .modal .row-2{margin-bottom:12px;}
+  .modal label{display:block; margin-bottom:12px;}
+  .toast{position:fixed; left:50%; bottom:calc(86px + var(--safe-b)); transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:11px 16px; border-radius:12px; font-size:13.5px; font-weight:600;
+    z-index:60; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; max-width:90%;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-row" id="appbarRow"></div>
+  <div class="prog-wrap" id="globalProg"></div>
+</header>
+
+<main id="app"></main>
+
+<nav class="tabbar" id="tabbar"></nav>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ----------------------- Album reference data ----------------------- */
+const ALBUM_TOTAL = 980; // fato: 48 seleções x 20 + 16 estádios + 4 institucionais
+const SLOTS_PER_TEAM = 20;
+
+// code -> país (mapeamento de siglas FIFA, para o seletor "adicionar seleção")
+const FIFA = {
+  ARG:"Argentina", AUS:"Austrália", AUT:"Áustria", BEL:"Bélgica", BRA:"Brasil",
+  CAN:"Canadá", CHI:"Chile", CIV:"Costa do Marfim", CMR:"Camarões", COD:"Congo DR",
+  COL:"Colômbia", CRC:"Costa Rica", CRO:"Croácia", DEN:"Dinamarca", ECU:"Equador",
+  EGY:"Egito", ENG:"Inglaterra", ESP:"Espanha", FRA:"França", GER:"Alemanha",
+  GHA:"Gana", GRE:"Grécia", IRN:"Irã", IRQ:"Iraque", ITA:"Itália",
+  JAM:"Jamaica", JPN:"Japão", KOR:"Coreia do Sul", KSA:"Arábia Saudita", MAR:"Marrocos",
+  MEX:"México", NED:"Holanda", NGA:"Nigéria", NOR:"Noruega", NZL:"Nova Zelândia",
+  PAN:"Panamá", PAR:"Paraguai", PER:"Peru", POL:"Polônia", POR:"Portugal",
+  QAT:"Catar", SCO:"Escócia", SEN:"Senegal", SRB:"Sérvia", SUI:"Suíça",
+  SVN:"Eslovênia", SWE:"Suécia", TUN:"Tunísia", TUR:"Turquia", UKR:"Ucrânia",
+  URU:"Uruguai", USA:"Estados Unidos", UZB:"Uzbequistão", VEN:"Venezuela", WAL:"País de Gales"
+};
+
+const SPECIALS = {
+  code:"ESP", name:"Especiais",
+  groups:[
+    { label:"Estádios", prefix:"EST", count:16 },
+    { label:"Institucionais", prefix:"FWC", items:["Logo","Bola","Mascote","Troféu"] }
+  ]
+};
+
+/* ----------------------- Storage ----------------------- */
+const KEY = "album2026:v1";
+let persistOK = true;
+function load(){
+  try{ const r=localStorage.getItem(KEY); if(r) return JSON.parse(r); }
+  catch(e){ persistOK=false; }
+  return null;
+}
+function save(){
+  if(!persistOK) return;
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ persistOK=false; }
+}
+
+let state = load() || {
+  teams:[
+    {code:"CAN", name:"Canadá"}, {code:"MEX", name:"México"}, {code:"USA", name:"Estados Unidos"},
+    {code:"COD", name:"Congo DR"}
+  ],
+  col:{},          // "BRA-7" -> {h:true, d:2}
+  settings:{ apiKey:"" }
+};
+// migra estruturas antigas
+state.col = state.col || {};
+state.settings = state.settings || {apiKey:""};
+
+function cell(code){ return state.col[code] || {h:false, d:0}; }
+function setHave(code, v){ const c=cell(code); c.h=v; if(!v) c.d=0; state.col[code]=c; save(); }
+function setDup(code, n){ const c=cell(code); c.d=Math.max(0,n); state.col[code]=c; save(); }
+
+/* contagem */
+function teamCodes(t){ const a=[]; for(let i=1;i<=SLOTS_PER_TEAM;i++) a.push(t.code+"-"+i); return a; }
+function specialCodes(){
+  const a=[];
+  SPECIALS.groups.forEach(g=>{
+    if(g.items) g.items.forEach((_,i)=> a.push(g.prefix+"-"+(i+1)));
+    else for(let i=1;i<=g.count;i++) a.push(g.prefix+"-"+i);
+  });
+  return a;
+}
+function haveCount(codes){ return codes.filter(c=>cell(c).h).length; }
+function totalHave(){
+  let n=0; state.teams.forEach(t=> n+=haveCount(teamCodes(t)));
+  n+=haveCount(specialCodes()); return n;
+}
+
+/* ----------------------- App state / routing ----------------------- */
+let view="home";       // home | team | trades | settings | scan
+let curTeam=null;      // team object or SPECIALS
+const app=document.getElementById("app");
+
+function go(v, team){ view=v; if(team!==undefined) curTeam=team; window.scrollTo(0,0); render(); }
+
+/* ----------------------- Render ----------------------- */
+function render(){ renderAppbar(); renderGlobalProg(); renderTabs(); renderView(); }
+
+function renderAppbar(){
+  const row=document.getElementById("appbarRow");
+  if(view==="team"||view==="scan"){
+    row.innerHTML = `<button class="back-btn" data-nav="home">‹ Álbum</button>
+      <div class="brand"><div class="brand-title">${view==="scan"?"Escanear página":esc(curTeam?curTeam.name:"")}</div></div>`;
+  } else {
+    const subs={home:"Copa do Mundo 2026 · Panini", trades:"O que falta e o que dá pra trocar", settings:"Ajustes do app"};
+    row.innerHTML = `<div class="brand"><div class="brand-mark"></div>
+      <div><div class="brand-title">Álbum Tracker</div>
+      <div class="brand-sub">${subs[view]||""}</div></div></div>`;
+  }
+}
+
+function renderGlobalProg(){
+  const el=document.getElementById("globalProg");
+  if(view==="settings"){ el.innerHTML=""; return; }
+  const have=totalHave(), pct=Math.round(have/ALBUM_TOTAL*100);
+  el.innerHTML = `<div class="prog-top"><span><b>${have}</b> de ${ALBUM_TOTAL} coladas</span><span>${pct}%</span></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>`;
+}
+
+const ICONS={
+  album:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v18"/></svg>',
+  trade:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/></svg>',
+  scan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.3 1A7 7 0 0 0 14 4.6L13.5 2h-3L10 4.6a7 7 0 0 0-2.6 1.4l-2.3-1-2 3.5L5.1 11a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.3-1A7 7 0 0 0 10 19.4L10.5 22h3l.5-2.6a7 7 0 0 0 2.6-1.4l2.3 1 2-3.5-2-1.5c.06-.33.1-.66.1-1z"/></svg>'
+};
+function renderTabs(){
+  const tabs=[["home","Álbum","album"],["trades","Trocas","trade"],["scan","Escanear","scan"],["settings","Ajustes","gear"]];
+  document.getElementById("tabbar").innerHTML = tabs.map(([v,l,ic])=>
+    `<button class="tab ${(view===v||(v==='home'&&view==='team'))?'active':''}" data-nav="${v}">${ICONS[ic]}<span>${l}</span></button>`
+  ).join("");
+}
+
+function renderView(){
+  if(view==="home") return renderHome();
+  if(view==="team") return renderTeam();
+  if(view==="trades") return renderTrades();
+  if(view==="settings") return renderSettings();
+  if(view==="scan") return renderScan();
+}
+
+function renderHome(){
+  const have=totalHave();
+  const faltam=ALBUM_TOTAL-have;
+  let dup=0; Object.values(state.col).forEach(c=> dup+=(c.d||0));
+  const cards = state.teams.map(t=>{
+    const codes=teamCodes(t), h=haveCount(codes), done=h===codes.length;
+    const pct=Math.round(h/codes.length*100);
+    return `<button class="team-card ${done?'done':''}" data-team="${t.code}">
+      <div class="tc-head"><span class="tc-sigla num">${t.code}</span>
+        <span class="tc-name">${esc(t.name)}</span></div>
+      <div class="tc-meta num">${h}/${codes.length} figurinhas</div>
+      <div class="tc-bar"><i style="width:${pct}%"></i></div>
+    </button>`;
+  }).join("");
+  const sc=specialCodes(), sh=haveCount(sc), sdone=sh===sc.length;
+  const specialCard=`<button class="team-card ${sdone?'done':''}" data-team="ESP">
+      <div class="tc-head"><span class="tc-sigla num">★</span><span class="tc-name">Especiais</span></div>
+      <div class="tc-meta num">${sh}/${sc.length} · estádios + institucionais</div>
+      <div class="tc-bar"><i style="width:${Math.round(sh/sc.length*100)}%"></i></div></button>`;
+
+  app.innerHTML = `<div class="view">
+    <div class="stat-row">
+      <div class="stat gold"><div class="n num">${have}</div><div class="l">Coladas</div></div>
+      <div class="stat coral"><div class="n num">${faltam}</div><div class="l">Faltam</div></div>
+      <div class="stat mint"><div class="n num">${dup}</div><div class="l">Repetidas</div></div>
+    </div>
+    <div class="section-eyebrow">Seleções (${state.teams.length})</div>
+    <div class="teams-grid">
+      ${cards}${specialCard}
+      <button class="add-card" data-add="1">+ Adicionar seleção</button>
+    </div>
+    <p class="note">Toque numa seleção para abrir a página e marcar as figurinhas. Os totais usam o tamanho oficial do álbum (980). Ajuste as seleções conforme o seu álbum.</p>
+  </div>`;
+}
+
+function renderTeam(){
+  const t=curTeam;
+  const isSpecial = t.code==="ESP";
+  let codes, slotsHTML;
+  if(isSpecial){
+    slotsHTML="";
+    SPECIALS.groups.forEach(g=>{
+      slotsHTML+=`<div class="section-eyebrow" style="grid-column:1/-1; margin-top:6px;">${g.label}</div>`;
+      const items = g.items ? g.items : Array.from({length:g.count},(_,i)=>String(i+1));
+      items.forEach((label,i)=>{
+        const code=g.prefix+"-"+(i+1);
+        slotsHTML+=slotHTML(code, g.items?label:String(i+1), g.items?"":g.prefix);
+      });
+    });
+    codes=specialCodes();
+  } else {
+    codes=teamCodes(t);
+    slotsHTML=codes.map((code,i)=> slotHTML(code, String(i+1), t.code)).join("");
+  }
+  const h=haveCount(codes), pct=Math.round(h/codes.length*100);
+  app.innerHTML = `<div class="view">
+    <div class="team-hero">
+      <span class="tc-sigla num">${isSpecial?"★":t.code}</span>
+      <div><div class="h-name">${esc(t.name)}</div>
+        <div class="h-meta num">${h} de ${codes.length} · ${pct}%</div></div>
+      ${isSpecial?"":`<button class="scan-cta" data-scanteam="${t.code}">📷 Escanear</button>`}
+    </div>
+    <div class="slots" id="slots">${slotsHTML}</div>
+    <p class="note">Toque numa figurinha para marcar como colada. Use − e + para registrar repetidas (entram na lista de trocas).
+    ${isSpecial?" Os estádios e institucionais são os cromos metalizados.":""}</p>
+    ${isSpecial?"":`<button class="btn btn-ghost" style="margin-top:14px" data-editteam="${t.code}">Editar / remover seleção</button>`}
+  </div>`;
+}
+
+function slotHTML(code, num, sigla){
+  const c=cell(code);
+  return `<div class="slot ${c.h?'is-have':''}" data-code="${code}">
+    <div class="slot-tap" data-act="toggle" data-code="${code}">
+      ${sigla?`<span class="slot-sigla num">${sigla}</span>`:""}
+      <span class="slot-num num">${num}</span>
+    </div>
+    <div class="slot-foot">
+      ${c.h
+        ? `<span class="rep">
+             <button data-act="dm" data-code="${code}">−</button>
+             <span class="rn ${c.d?'':'zero'} num">${c.d?'×'+c.d:'rep'}</span>
+             <button data-act="dp" data-code="${code}">+</button>
+           </span>`
+        : `<span class="slot-falta">colar</span>`}
+    </div>
+  </div>`;
+}
+
+function renderTrades(){
+  // faltantes por seleção
+  let missBlocks="";
+  const allGroups=[...state.teams, {code:"ESP", name:"Especiais", special:true}];
+  let anyMiss=false, anyDup=false;
+  allGroups.forEach(t=>{
+    const codes = t.special?specialCodes():teamCodes(t);
+    const miss = codes.filter(c=>!cell(c).h).map(c=>c.split("-")[1]);
+    if(miss.length){
+      anyMiss=true;
+      missBlocks+=`<div class="trade-item"><span><b>${t.special?"Especiais":esc(t.name)}</b>
+        <div class="codes num">${t.special?"":t.code+" "}${miss.join(", ")}</div></span>
+        <span class="pill coral num">${miss.length}</span></div>`;
+    }
+  });
+  // repetidas
+  let dupItems="";
+  Object.keys(state.col).forEach(code=>{
+    const c=state.col[code]; if(c.d>0){
+      anyDup=true; const [sig,n]=code.split("-");
+      dupItems+=`<div class="trade-item"><span class="num">${sig} ${n}</span>
+        <span class="pill gold num">×${c.d}</span></div>`;
+    }
+  });
+
+  app.innerHTML = `<div class="view">
+    <div class="trade-block">
+      <div class="section-eyebrow">Faltam para colar</div>
+      ${anyMiss?`<div class="trade-list">${missBlocks}</div>
+        <button class="btn btn-ghost" style="margin-top:12px" data-share="miss">Compartilhar lista de faltantes</button>`
+        :`<div class="empty">Nenhuma faltando 🎉<br>Seu álbum está completo!</div>`}
+    </div>
+    <div class="trade-block">
+      <div class="section-eyebrow">Repetidas para trocar</div>
+      ${anyDup?`<div class="trade-list">${dupItems}</div>
+        <button class="btn btn-ghost" style="margin-top:12px" data-share="dup">Compartilhar lista de trocas</button>`
+        :`<div class="empty">Sem repetidas registradas.<br>Marque com o + nas páginas das seleções.</div>`}
+    </div>
+  </div>`;
+}
+
+function renderSettings(){
+  const has = !!(state.settings.apiKey||"").trim();
+  app.innerHTML = `<div class="view">
+    <div class="panel">
+      <h3>Escanear com IA</h3>
+      <p>O "Escanear página" envia a foto para um modelo de visão que lê os números e marca as figurinhas.
+      Funciona direto quando o app roda dentro do Claude. Se você instalou o app no seu próprio site,
+      cole sua chave da API Anthropic aqui para ativar o reconhecimento.</p>
+      <label class="field-label">Chave da API Anthropic (opcional)</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-..." value="${esc(state.settings.apiKey||"")}" />
+      <div class="row-2" style="margin-top:12px">
+        <button class="btn btn-gold" data-savekey="1">Salvar chave</button>
+        <button class="btn btn-ghost" data-savekey="0">Limpar</button>
+      </div>
+      <p class="note">${has?"✓ Chave salva neste dispositivo.":"Sem chave — o scan tenta o modo integrado do Claude."} A chave fica só no seu aparelho.</p>
+    </div>
+    <div class="panel">
+      <h3>Dados</h3>
+      <p>${persistOK?"Seu progresso é salvo automaticamente neste dispositivo.":"⚠️ Não foi possível salvar neste ambiente (modo de visualização). Instalado como app, o progresso será salvo normalmente."}</p>
+      <button class="btn btn-ghost" data-export="1" style="margin-bottom:10px">Exportar progresso (backup)</button>
+      <button class="btn btn-ghost" data-reset="1">Apagar tudo</button>
+    </div>
+    <p class="note">Álbum Panini Copa do Mundo 2026 · 980 figurinhas · 48 seleções (20 cada) + 16 estádios + 4 institucionais.</p>
+  </div>`;
+}
+
+function renderScan(){
+  const teamOpts = state.teams.map(t=>`<option value="${t.code}" ${curTeam&&curTeam.code===t.code?"selected":""}>${esc(t.name)} (${t.code})</option>`).join("");
+  app.innerHTML = `<div class="view">
+    <div class="panel">
+      <h3>Escanear página</h3>
+      <p>Fotografe a página de uma seleção. A IA lê os números visíveis e marca o que está colado.
+      Revise antes de aplicar — fotos com brilho ou cromos metalizados podem confundir a leitura.</p>
+      <label class="field-label">Seleção desta página</label>
+      <select id="scanTeam">${teamOpts}</select>
+      <input type="file" id="scanFile" accept="image/*" capture="environment" style="display:none" />
+      <img id="scanPreview" class="preview" alt="prévia" />
+      <button class="btn btn-mint" style="margin-top:12px" data-pick="1">📷 Tirar / escolher foto</button>
+      <button class="btn btn-gold" id="analyzeBtn" style="margin-top:10px; display:none" data-analyze="1">Analisar com IA</button>
+      <div class="scan-status" id="scanStatus"></div>
+      <div class="review" id="scanReview"></div>
+    </div>
+    <p class="note">Dica: foto reta, de cima, sem reflexo de luz. Se a leitura errar, dá pra ajustar manualmente na página da seleção.</p>
+  </div>`;
+}
+
+/* ----------------------- Scan logic ----------------------- */
+let scanImage=null; // {dataUrl, b64, media}
+function onPick(){ document.getElementById("scanFile").click(); }
+function onFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    const dataUrl=r.result;
+    scanImage={ dataUrl, b64:dataUrl.split(",")[1], media:f.type||"image/jpeg" };
+    const p=document.getElementById("scanPreview"); p.src=dataUrl; p.style.display="block";
+    document.getElementById("analyzeBtn").style.display="flex";
+    setStatus("","");
+  };
+  r.readAsDataURL(f);
+}
+function setStatus(msg, cls){ const el=document.getElementById("scanStatus"); if(el){ el.textContent=msg; el.className="scan-status "+(cls||""); } }
+
+async function analyze(){
+  if(!scanImage){ setStatus("Escolha uma foto primeiro.","err"); return; }
+  const code=document.getElementById("scanTeam").value;
+  const t=state.teams.find(x=>x.code===code);
+  const btn=document.getElementById("analyzeBtn"); btn.disabled=true;
+  setStatus("Analisando a página… isso leva alguns segundos.","");
+  const prompt=`Você está vendo a foto de UMA página de um álbum de figurinhas (seleção ${t.name}, sigla ${code}), com espaços numerados de 1 a ${SLOTS_PER_TEAM}. Para cada número, determine se o espaço tem uma figurinha colada (PREENCHIDO) ou está vazio mostrando o número/silhueta impressa (VAZIO). Responda SOMENTE com JSON válido, sem markdown e sem texto extra, no formato: {"preenchidos":[1,3,4],"vazios":[2,5]}. Inclua apenas números que você consegue ver na foto.`;
+  const headers={"Content-Type":"application/json"};
+  const key=(state.settings.apiKey||"").trim();
+  if(key){ headers["x-api-key"]=key; headers["anthropic-version"]="2023-06-01"; headers["anthropic-dangerous-direct-browser-access"]="true"; }
+  try{
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers,
+      body:JSON.stringify({
+        model:"claude-sonnet-4-6", max_tokens:1000,
+        messages:[{role:"user", content:[
+          {type:"image", source:{type:"base64", media_type:scanImage.media, data:scanImage.b64}},
+          {type:"text", text:prompt}
+        ]}]
+      })
+    });
+    if(!resp.ok){ throw new Error("HTTP "+resp.status); }
+    const data=await resp.json();
+    const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+    const clean=text.replace(/```json|```/g,"").trim();
+    const json=JSON.parse(clean.slice(clean.indexOf("{"), clean.lastIndexOf("}")+1));
+    const filled=(json.preenchidos||[]).filter(n=>Number.isInteger(n)&&n>=1&&n<=SLOTS_PER_TEAM);
+    showReview(code, filled);
+    setStatus("Leitura concluída. Revise e aplique.","ok");
+  }catch(err){
+    setStatus("Não consegui analisar automaticamente ("+err.message+"). Você pode marcar manualmente na página da seleção, ou adicionar uma chave de API em Ajustes.","err");
+  }finally{ btn.disabled=false; }
+}
+
+function showReview(code, filled){
+  const rev=document.getElementById("scanReview");
+  const chips = filled.length
+    ? filled.sort((a,b)=>a-b).map(n=>`<span class="chip have num">${code} ${n}</span>`).join("")
+    : `<span class="note">A IA não identificou figurinhas coladas nesta foto.</span>`;
+  rev.style.display="block";
+  rev.innerHTML=`<div class="field-label">Identificadas como coladas (${filled.length}):</div>
+    <div class="chips">${chips}</div>
+    <div class="row-2">
+      <button class="btn btn-gold" data-apply="${code}" data-filled="${filled.join(",")}">Marcar como coladas</button>
+      <button class="btn btn-ghost" data-applyall="${code}" data-filled="${filled.join(",")}">Substituir página</button>
+    </div>
+    <p class="note">"Marcar como coladas" adiciona estas sem desmarcar as outras. "Substituir página" define exatamente estas como coladas (apaga o resto da seleção).</p>`;
+}
+
+/* ----------------------- Modals ----------------------- */
+const modalBg=document.getElementById("modalBg"), modal=document.getElementById("modal");
+function openModal(html){ modal.innerHTML=html; modalBg.classList.add("open"); }
+function closeModal(){ modalBg.classList.remove("open"); }
+modalBg.addEventListener("click",e=>{ if(e.target===modalBg) closeModal(); });
+
+function addTeamModal(){
+  const used=new Set(state.teams.map(t=>t.code));
+  const opts=Object.keys(FIFA).filter(c=>!used.has(c)).sort((a,b)=>FIFA[a].localeCompare(FIFA[b]))
+    .map(c=>`<option value="${c}">${FIFA[c]} (${c})</option>`).join("");
+  openModal(`<h3>Adicionar seleção</h3>
+    <label><span class="field-label">Escolha pela lista</span>
+      <select id="mTeamSel"><option value="">— selecione —</option>${opts}</select></label>
+    <label><span class="field-label">Ou digite sigla e nome</span>
+      <div class="row-2"><input type="text" id="mCode" placeholder="Sigla (ex: BRA)" maxlength="4"/>
+      <input type="text" id="mName" placeholder="Nome"/></div></label>
+    <button class="btn btn-gold" data-addconfirm="1">Adicionar</button>`);
+}
+function editTeamModal(code){
+  const t=state.teams.find(x=>x.code===code);
+  openModal(`<h3>Editar seleção</h3>
+    <label><span class="field-label">Sigla</span><input type="text" id="eCode" value="${esc(t.code)}" maxlength="4"/></label>
+    <label><span class="field-label">Nome</span><input type="text" id="eName" value="${esc(t.name)}"/></label>
+    <button class="btn btn-gold" data-editconfirm="${code}" style="margin-bottom:10px">Salvar</button>
+    <button class="btn btn-ghost" data-removeteam="${code}">Remover seleção</button>`);
+}
+
+/* ----------------------- Events ----------------------- */
+document.addEventListener("click",(e)=>{
+  const el=e.target.closest("[data-nav],[data-team],[data-add],[data-scanteam],[data-editteam],[data-act],[data-pick],[data-analyze],[data-apply],[data-applyall],[data-savekey],[data-export],[data-reset],[data-confirmreset],[data-share],[data-addconfirm],[data-editconfirm],[data-removeteam]");
+  if(!el) return;
+  const d=el.dataset;
+
+  if(d.nav){ if(d.nav==="scan"){ go("scan", state.teams[0]); } else { go(d.nav, d.nav==="home"?null:undefined); } return; }
+  if(d.team){ const t=d.team==="ESP"?SPECIALS:state.teams.find(x=>x.code===d.team); go("team", t); return; }
+  if(d.add){ addTeamModal(); return; }
+  if(d.scanteam){ const t=state.teams.find(x=>x.code===d.scanteam); go("scan", t); return; }
+  if(d.editteam){ editTeamModal(d.editteam); return; }
+
+  if(d.act){
+    const code=d.code;
+    if(d.act==="toggle"){ setHave(code, !cell(code).h); refreshSlot(code); updateTeamHero(); renderGlobalProg(); }
+    if(d.act==="dp"){ setDup(code, cell(code).d+1); refreshSlot(code); }
+    if(d.act==="dm"){ setDup(code, cell(code).d-1); refreshSlot(code); }
+    return;
+  }
+
+  if(d.pick){ onPick(); return; }
+  if(d.analyze){ analyze(); return; }
+  if(d.apply!==undefined && el.hasAttribute("data-apply")){
+    applyScan(d.apply, d.filled, false); return;
+  }
+  if(d.applyall!==undefined && el.hasAttribute("data-applyall")){
+    applyScan(d.applyall, d.filled, true); return;
+  }
+
+  if(d.savekey!==undefined){
+    const v=d.savekey==="1" ? (document.getElementById("apiKey").value.trim()) : "";
+    state.settings.apiKey=v; save(); toast(v?"Chave salva":"Chave removida"); renderSettings(); return;
+  }
+  if(d.export){ exportData(); return; }
+  if(d.reset){
+    openModal(`<h3>Apagar tudo?</h3><p style="color:var(--muted);font-size:14px;margin:0 0 16px">
+      Isso apaga todo o seu progresso e suas seleções. Não dá pra desfazer.</p>
+      <button class="btn btn-ghost" data-confirmreset="1" style="background:var(--coral);color:#fff">Sim, apagar tudo</button>`);
+    return;
+  }
+  if(el.dataset.confirmreset){ localStorage.removeItem(KEY); location.reload(); return; }
+
+  if(d.share){ shareList(d.share); return; }
+
+  if(d.addconfirm){
+    let code, name;
+    const sel=document.getElementById("mTeamSel").value;
+    if(sel){ code=sel; name=FIFA[sel]; }
+    else{ code=(document.getElementById("mCode").value||"").trim().toUpperCase(); name=(document.getElementById("mName").value||"").trim()||code; }
+    if(!code){ toast("Informe a sigla"); return; }
+    if(state.teams.some(t=>t.code===code)){ toast("Seleção já existe"); return; }
+    state.teams.push({code, name}); save(); closeModal(); go("home"); toast(name+" adicionada");
+    return;
+  }
+  if(d.editconfirm){
+    const t=state.teams.find(x=>x.code===d.editconfirm);
+    const nc=(document.getElementById("eCode").value||"").trim().toUpperCase();
+    const nn=(document.getElementById("eName").value||"").trim();
+    if(nc && nc!==t.code){ // re-key collection
+      teamCodes(t).forEach(old=>{ const i=old.split("-")[1]; const nk=nc+"-"+i;
+        if(state.col[old]){ state.col[nk]=state.col[old]; delete state.col[old]; } });
+      t.code=nc;
+    }
+    if(nn) t.name=nn;
+    save(); closeModal(); curTeam=t; render(); toast("Salvo");
+    return;
+  }
+  if(d.removeteam){
+    const i=state.teams.findIndex(x=>x.code===d.removeteam);
+    teamCodes(state.teams[i]).forEach(c=>delete state.col[c]);
+    state.teams.splice(i,1); save(); closeModal(); go("home"); toast("Seleção removida");
+    return;
+  }
+});
+
+document.addEventListener("change",(e)=>{ if(e.target.id==="scanFile") onFile(e); });
+
+function applyScan(code, filledStr, replace){
+  const filled=(filledStr?filledStr.split(",").filter(Boolean).map(Number):[]);
+  const t=state.teams.find(x=>x.code===code);
+  if(replace){ teamCodes(t).forEach(c=>{ const n=Number(c.split("-")[1]); setHave(c, filled.includes(n)); }); }
+  else { filled.forEach(n=> setHave(code+"-"+n, true)); }
+  toast(filled.length+" marcada(s) em "+t.name);
+  go("team", t);
+}
+
+function refreshSlot(code){
+  const slot=document.querySelector(`.slot[data-code="${code}"]`); if(!slot) return;
+  const num = slot.querySelector(".slot-num").textContent;
+  const sigEl=slot.querySelector(".slot-sigla"); const sig=sigEl?sigEl.textContent:"";
+  slot.outerHTML = slotHTML(code, num, sig);
+}
+function updateTeamHero(){
+  if(view!=="team") return;
+  const codes = curTeam.code==="ESP"?specialCodes():teamCodes(curTeam);
+  const h=haveCount(codes), pct=Math.round(h/codes.length*100);
+  const meta=document.querySelector(".team-hero .h-meta");
+  if(meta) meta.textContent = `${h} de ${codes.length} · ${pct}%`;
+}
+
+/* ----------------------- Share / export ----------------------- */
+function buildText(kind){
+  let lines=[];
+  if(kind==="miss"){
+    lines.push("📋 Figurinhas que faltam — Álbum Copa 2026");
+    [...state.teams,{code:"ESP",name:"Especiais",special:true}].forEach(t=>{
+      const codes=t.special?specialCodes():teamCodes(t);
+      const miss=codes.filter(c=>!cell(c).h).map(c=>c.split("-")[1]);
+      if(miss.length) lines.push(`\n${t.special?"Especiais":t.name} (${t.special?"":t.code+" "}faltam ${miss.length}): ${miss.join(", ")}`);
+    });
+  } else {
+    lines.push("🔁 Repetidas para troca — Álbum Copa 2026");
+    const items=Object.keys(state.col).filter(c=>state.col[c].d>0).sort();
+    if(!items.length) lines.push("\n(nenhuma)");
+    items.forEach(c=>{ const [s,n]=c.split("-"); lines.push(`${s} ${n} ×${state.col[c].d}`); });
+  }
+  return lines.join("\n");
+}
+async function shareList(kind){
+  const text=buildText(kind);
+  if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){} }
+  try{ await navigator.clipboard.writeText(text); toast("Lista copiada"); }
+  catch(e){ openModal(`<h3>Lista</h3><textarea readonly style="width:100%;height:240px;background:var(--petrol-2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px">${esc(text)}</textarea>`); }
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=url; a.download="album-copa-2026-backup.json"; a.click(); URL.revokeObjectURL(url);
+  toast("Backup gerado");
+}
+
+/* ----------------------- Utils ----------------------- */
+function esc(s){ return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+let toastT;
+function toast(msg){ const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2200); }
+
+/* ----------------------- Boot ----------------------- */
+render();
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
